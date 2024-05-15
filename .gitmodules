@@ -1,0 +1,3 @@
+[submodule "media-convert-client"]
+	path = media-convert-client
+	url = git@github.com:Temidayo32/media-convert-client.git

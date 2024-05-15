@@ -1,0 +1,21 @@
+{
+  "name": "video_converter",
+  "version": "1.0.0",
+  "description": "Convert video files from one format to another",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Temidayo",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "firebase": "^10.11.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "multer": "^1.4.5-lts.1",
+    "webpack": "^5.91.0"
+  }
+}
