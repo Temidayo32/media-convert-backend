@@ -1,27 +1,39 @@
 const ffmpeg = require('fluent-ffmpeg');
+const ffprobe = ffmpeg.ffprobe;
 const path = require('path');
-const fs = require('fs');
 
 // Specify the path to your FFmpeg binary
 ffmpeg.setFfmpegPath('/usr/bin/ffmpeg');
 
-function convertVideo(inputPath, outputPath) {
+function convertVideo(inputStreamOrPath, outputPath) {
   return new Promise((resolve, reject) => {
-    ffmpeg(inputPath)
-    //   .outputOptions('-vf', 'scale=320:-1')
-    .on('start', function(commandLine) {
-        console.log('Spawned Ffmpeg with command: ' + commandLine);
-      })
-    .output(outputPath)
-    .on('end', () => {
-        console.log('Conversion finished');
-        resolve();
-      })
-    .on('error', (err) => {
-    console.error('Error during conversion:', err);
-    reject(err);
-    })
-    .run()
+    // Run ffprobe to gather information about the input format
+    ffprobe(inputStreamOrPath, (err, metadata) => {
+      if (err) {
+        console.error('Error getting input format information:', err);
+        reject(err);
+        return;
+      }
+
+      // Log input format information
+      console.log('Input format:', metadata.format);
+
+      // Begin FFmpeg conversion process
+      ffmpeg(inputStreamOrPath)
+        .on('start', function(commandLine) {
+          console.log('Spawned Ffmpeg with command: ' + commandLine);
+        })
+        .output(outputPath)
+        .on('end', () => {
+          console.log('Conversion finished');
+          resolve();
+        })
+        .on('error', (err) => {
+          console.error('Error during conversion:', err);
+          reject(err);
+        })
+        .run();
+    });
   });
 }
 

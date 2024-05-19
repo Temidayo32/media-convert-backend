@@ -20,12 +20,19 @@ router.use('/convert', (req, res, next) => {
     next();
 });
 
+router.use('/convertcloud', (req, res, next) => {
+    next();
+});
+
 // Route for rendering the index page
 router.get('/', (req, res) => {
     res.render('index.ejs');
 });
 
-// Route for handling video conversion
-router.post('/convert', upload.single('video'), videoController.convert);
+router.post('/convert', upload.array('video'), videoController.convert);
+
+// Google Drive and Dropbox file upload
+router.post('/convertcloud', upload.single('video'), videoController.convertCloud);
+
 
 module.exports = router;
