@@ -1,10 +1,13 @@
+const path = require('path');
+const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+
 const { processQueue, setProgress, reQueueMessage } = require('../services/queue');
 const { getGoogleDriveFileStream, saveStreamToFile } = require('../services/googleDriveService');
 const { getDropboxFileStream } = require('../services/dropboxService');
 const { convertVideo } = require('../services/videoService');
-const path = require('path');
-const fs = require('fs');
-const ffmpeg = require('fluent-ffmpeg');
+const { uploadToGCS, scheduleFileDeletion, generateSignedUrl } = require('../services/googleStore')
+
 
 async function videoConversionHandler(message, io) {
     const { jobId, source, videoId, videoName, dropboxPath, videoExt, videoFormat } = message;
@@ -19,8 +22,8 @@ async function videoConversionHandler(message, io) {
 
     try {
         let videoStream;
-        await setProgress(jobId, 'processing'); // Initial progress
         io.emit('conversion_progress', { jobId, progress: 'processing' });
+        await setProgress(jobId, 'processing'); // Initial progress
 
         if (source === 'google') {
             videoStream = await getGoogleDriveFileStream(videoId);
@@ -35,17 +38,41 @@ async function videoConversionHandler(message, io) {
                 console.log('Input format:', metadata.format);
             });
 
+            io.emit('conversion_progress', { jobId, progress: 'converting' });
             await convertVideo(tempFilePath, outputPath);
-            await setProgress(jobId, 'completed');
+
+            const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
+            io.emit('conversion_progress', { jobId, progress: 'uploading' });
+            await uploadToGCS(outputPath, destination);
+
+            // Get the public URL
+            const publicUrl = await generateSignedUrl(destination);
+            
+
+            await setProgress(jobId, 'completed'); // Final progress
+            io.emit('conversion_progress', { jobId, progress: 'completed', url: publicUrl  });
+
             fs.unlinkSync(tempFilePath);
+            fs.unlinkSync(outputPath);
         } else if (source === 'dropbox') {
             videoStream = await getDropboxFileStream(dropboxPath);
+            io.emit('conversion_progress', { jobId, progress: 'converting' });
             await convertVideo(videoStream, outputPath)
-            await setProgress(jobId, 'completed');
+
+            
+            const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
+            io.emit('conversion_progress', { jobId, progress: 'uploading' });
+            await uploadToGCS(outputPath, destination);
+
+            // Get the public URL
+            const publicUrl = await generateSignedUrl(destination);
+           
+            await setProgress(jobId, 'completed'); // Final progress
+            io.emit('conversion_progress', { jobId, progress: 'completed', url: publicUrl  });
+            
+            fs.unlinkSync(outputPath);
         }
 
-        await setProgress(jobId, 'completed'); // Final progress
-        io.emit('conversion_progress', { jobId, progress: 'completed' });
     } catch (error) {
         console.error('Error converting video from source:', error);
         await setProgress(jobId, 'Conversion failed');
