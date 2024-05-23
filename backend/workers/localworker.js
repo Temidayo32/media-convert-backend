@@ -5,7 +5,7 @@ const { convertVideo } = require('../services/videoService');
 const { uploadToGCS, scheduleFileDeletion, generateSignedUrl } = require('../services/googleStore')
 
 async function handleVideoConversion(message, io) {
-    const { source, jobId, inputPath, outputPath, videoFormat } = message;
+    const { source, jobId, inputPath, outputPath, videoFormat, videoSettings } = message;
 
     if (source !== 'local') {
         console.log("whoops! wrong worker")
@@ -19,7 +19,7 @@ async function handleVideoConversion(message, io) {
 
         // Perform the video conversion
         io.emit('conversion_progress', { jobId, progress: 'converting' });
-        await convertVideo(inputPath, outputPath);
+        await convertVideo(inputPath, outputPath, videoSettings);
 
         // Upload to GCS
         const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS

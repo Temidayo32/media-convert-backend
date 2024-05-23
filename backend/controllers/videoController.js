@@ -9,6 +9,7 @@ async function convert(req, res) {
         for (let i = 0; i < files.length; i++) {
             const inputPath = files[i].path; 
             const { source, jobId, videoName, videoFormat } = req.body;
+            const videoSettings = JSON.parse(req.body.videoSettings);
             const outputPath = path.join(__dirname, '..', 'public', `${req.body.videoName}.${req.body.videoFormat}`);
             console.log(req.body.videoName)
 
@@ -20,6 +21,7 @@ async function convert(req, res) {
                 outputPath,
                 videoName,
                 videoFormat,
+                videoSettings
             });
         res.status(200).send({ message: 'Video conversion job added to queue', jobId });
         }
@@ -33,6 +35,8 @@ async function convert(req, res) {
 async function convertCloud(req, res) {
     console.log("Video conversion request received");
     const { source, jobId, videoId, videoName, dropboxPath, videoExt, videoFormat } = req.body;
+    const videoSettings = JSON.parse(req.body.videoSettings);
+
 
     try {
         await setProgress(jobId, 'queued');
@@ -43,7 +47,8 @@ async function convertCloud(req, res) {
             videoName,
             dropboxPath,
             videoExt,
-            videoFormat
+            videoFormat,
+            videoSettings
         };
         await addToQueue(message);
         res.status(200).send({ message: 'Video conversion job added to queue', jobId });

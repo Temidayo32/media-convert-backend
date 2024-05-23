@@ -15,13 +15,13 @@ async function addToQueue(message) {
 }
 
 async function reQueueMessage(message, retries = 3, delay = 500) {
-    console.log(`Re-queuing message: ${JSON.stringify(message)} with retries: ${retries}`);
+    console.log(`Re-queuing message: ${JSON.stringify(message.jobId)} with retries: ${retries}`);
     if (retries > 0) {
         setTimeout(async () => {
             await addToQueue(message);
         }, delay);
     } else {
-        console.error(`Failed to process message after maximum retries: ${JSON.stringify(message)}`);
+        console.error(`Failed to process message after maximum retries: ${JSON.stringify(message.jobId)}`);
     }
 }
 

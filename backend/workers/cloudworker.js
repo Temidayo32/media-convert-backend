@@ -10,7 +10,7 @@ const { uploadToGCS, scheduleFileDeletion, generateSignedUrl } = require('../ser
 
 
 async function videoConversionHandler(message, io) {
-    const { jobId, source, videoId, videoName, dropboxPath, videoExt, videoFormat } = message;
+    const { jobId, source, videoId, videoName, dropboxPath, videoExt, videoFormat, videoSettings } = message;
     const tempFilePath = path.join(__dirname, '..', 'uploads', `${videoName}.${videoExt}`);
     const outputPath = path.join(__dirname, '..', 'public', `${videoName}.${videoFormat}`);
 
@@ -39,7 +39,7 @@ async function videoConversionHandler(message, io) {
             });
 
             io.emit('conversion_progress', { jobId, progress: 'converting' });
-            await convertVideo(tempFilePath, outputPath);
+            await convertVideo(tempFilePath, outputPath, videoSettings);
 
             const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
             io.emit('conversion_progress', { jobId, progress: 'uploading' });
@@ -56,8 +56,9 @@ async function videoConversionHandler(message, io) {
             fs.unlinkSync(outputPath);
         } else if (source === 'dropbox') {
             videoStream = await getDropboxFileStream(dropboxPath);
+
             io.emit('conversion_progress', { jobId, progress: 'converting' });
-            await convertVideo(videoStream, outputPath)
+            await convertVideo(videoStream, outputPath, videoSettings)
 
             
             const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
