@@ -4,6 +4,11 @@
 
 Check out [Media Convert (frontend)](https://github.com/Temidayo32/media-convert-client)
 
+## Video Demo
+
+[![Watch the video](https://img.youtube.com/vi/G3hXirKg_7s/maxresdefault.jpg)](https://youtu.be/G3hXirKg_7s)
+
+
 ## Features
 
 - **Upload Media Files**: Users can upload video and audio files from their device, Dropbox, or Google Drive.
@@ -26,6 +31,6 @@ Check out [Media Convert (frontend)](https://github.com/Temidayo32/media-convert
 
 ## Roadmap
 
-- **Video Converter (In Development)**: Support for converting video files (e.g., MP4, MPEG) .
+- **Video Converter**: Support for converting video files (e.g., MP4, MPEG) .
 - **Document Converter (Coming soon)**: Support for converting document files (e.g., PDF, DOCX).
 - **Image Converter (Coming soon)**: Support for converting image files (e.g., JPG, PNG).
