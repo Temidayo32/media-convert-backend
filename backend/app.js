@@ -66,7 +66,7 @@ app.use((req, res, next) => {
   const session = req.session;
   const sessionID  = req.cookies['connect.sid']
   // const cookies = req.cookies;
-  console.log('Incoming Cookies:', cookies);
+  // console.log('Incoming Cookies:', cookies);
   console.log('Incoming session:', session);
   console.log('Incoming sessionID:', sessionID);
   next();
