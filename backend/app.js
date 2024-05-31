@@ -8,6 +8,7 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const redisClient = require('./Middleware/redisClient');
 const cookieParser = require('cookie-parser');
+const { startCleanupJob } = require('./services/garbage');
 const logger = require('./Middleware/logger');
 require('dotenv').config();
 
@@ -65,8 +66,8 @@ app.use(session({
 app.use((req, res, next) => {
   const session = req.session;
   const sessionID  = req.cookies['connect.sid']
-  // const cookies = req.cookies;
-  // console.log('Incoming Cookies:', cookies);
+  const cookies = req.cookies;
+  console.log('Incoming Cookies:', cookies);
   console.log('Incoming session:', session);
   console.log('Incoming sessionID:', sessionID);
   next();
@@ -97,6 +98,9 @@ for (let i = 0; i < numCloudWorkers; i++) {
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+
+startCleanupJob();
 
 // Use video routes
 app.use('/', videoRoutes);
