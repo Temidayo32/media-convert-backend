@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { processQueue, setProgress, reQueueMessage } = require('../services/queue');
 const { convertVideo } = require('../services/videoService');
-const { uploadToGCS, scheduleFileDeletion, generateSignedUrl } = require('../services/googleStore')
+const { uploadToS3, generateSignedUrl } = require('../services/awsStorage');
 const{ videoMetaData } = require('../services/videoMetadata');
 
 async function handleVideoConversion(message, io) {
@@ -25,7 +25,7 @@ async function handleVideoConversion(message, io) {
         // Upload to GCS
         const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
         io.emit('conversion_progress', { jobId, progress: 'uploading', name: videoName, format: videoFormat });
-        await uploadToGCS(outputPath, destination);
+        await uploadToS3(outputPath, destination);
 
         // Get the public URL
         const publicUrl = await generateSignedUrl(destination);

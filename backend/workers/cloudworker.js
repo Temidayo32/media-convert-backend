@@ -6,7 +6,7 @@ const { processQueue, setProgress, reQueueMessage } = require('../services/queue
 const { getGoogleDriveFileStream, saveStreamToFile } = require('../services/googleDriveService');
 const { getDropboxFileStream } = require('../services/dropboxService');
 const { convertVideo } = require('../services/videoService');
-const { uploadToGCS, scheduleFileDeletion, generateSignedUrl } = require('../services/googleStore')
+const { uploadToS3, generateSignedUrl } = require('../services/awsStorage');
 
 
 async function videoConversionHandler(message, io) {
@@ -43,11 +43,10 @@ async function videoConversionHandler(message, io) {
 
             const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
             io.emit('conversion_progress', { jobId, progress: 'uploading', name: videoName, format: videoFormat });
-            await uploadToGCS(outputPath, destination);
+            await uploadToS3(outputPath, destination);
 
             // Get the public URL
             const publicUrl = await generateSignedUrl(destination);
-            
 
             await setProgress(jobId, 'completed'); // Final progress
             io.emit('conversion_progress', { jobId, progress: 'completed', url: publicUrl, name: videoName, format: videoFormat  });

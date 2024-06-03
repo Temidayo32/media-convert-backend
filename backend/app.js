@@ -8,8 +8,11 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const redisClient = require('./Middleware/redisClient');
 const cookieParser = require('cookie-parser');
-const { startCleanupJob } = require('./services/garbage');
+const { startCleanupJob } = require('./services/storeGarbage');
+// const { startStoreCleanup } = require('./services/cloudGarbage');
+const { cleanupAWS } = require('./services/awsGarbage');
 const logger = require('./Middleware/logger');
+const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -101,9 +104,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 
 startCleanupJob();
+cleanupAWS();
+// startStoreCleanup();
 
-// Use video routes
+app.use('/auth', authRoutes);
 app.use('/', videoRoutes);
+
 
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
