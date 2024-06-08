@@ -8,11 +8,10 @@ const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const redisClient = require('./Middleware/redisClient');
 const cookieParser = require('cookie-parser');
-const { startCleanupJob } = require('./services/storeGarbage');
+const { startCleanupJob } = require('./services/google/storeGarbage');
 // const { startStoreCleanup } = require('./services/cloudGarbage');
-const { cleanupAWS } = require('./services/awsGarbage');
+const { cleanupAWS } = require('./services/aws/awsGarbage');
 const logger = require('./Middleware/logger');
-const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -31,6 +30,7 @@ app.use((req, res, next) => {
 
 const corsOptions = {
   origin: [
+    'https://localhost:3000',
     'http://localhost:3000',
     // 'https://9d34-102-215-57-153.ngrok-free.app'
   ],
@@ -107,8 +107,8 @@ startCleanupJob();
 cleanupAWS();
 // startStoreCleanup();
 
-app.use('/auth', authRoutes);
 app.use('/', videoRoutes);
+
 
 
 server.listen(PORT, () => {

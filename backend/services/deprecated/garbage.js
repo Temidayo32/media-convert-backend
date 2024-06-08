@@ -1,4 +1,4 @@
-const admin = require('../config/firestore_config');
+const admin = require('../../config/firestore_config');
 const cron = require('node-cron');
 
 const bucket = admin.storage().bucket();
