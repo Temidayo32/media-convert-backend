@@ -16,8 +16,6 @@ const drive = google.drive({ version: 'v3', auth });
 async function getGoogleDriveFileStream(fileId) {
   const response = await drive.files.get({ fileId, alt: 'media'}, { responseType: 'stream' });
   return response.data;
-//   const videoUrl = `https://drive.google.com/uc?id=${fileId}&export=download`
-//   return videoUrl;
 }
 
 async function saveStreamToFile(stream, filePath) {

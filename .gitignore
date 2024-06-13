@@ -2,3 +2,6 @@ backend/node_modules/
 backend/config
 backend/.env
 backend/session.log
+backend/services/videoMetadata.js
+backend/services/googleStore.js
+backend/services/cloudGarbage.js

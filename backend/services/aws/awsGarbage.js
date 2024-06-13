@@ -75,6 +75,7 @@ const cleanupAWS = () => {
 
 // Immediately invoke the function to handle any expired files on startup
 module.exports = {
-    cleanupAWS
+    cleanupAWS, 
+    deleteExpiredFiles
 }
 

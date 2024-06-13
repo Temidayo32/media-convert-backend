@@ -36,5 +36,6 @@ const startCleanupJob = () => {
 };
 
 module.exports = {
-  startCleanupJob
+  startCleanupJob,
+  cleanupExpiredTasks
 };

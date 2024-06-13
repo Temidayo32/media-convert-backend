@@ -152,32 +152,4 @@ const generateSignedUrl = async (filename) => {
   }
 };
 
-// Function to schedule file deletion
-// const scheduleFileDeletion = async (filename) => {
-//     const params = {
-//       Bucket: bucketName,
-//       ChecksumAlgorithm: "CRC32" || "CRC32C" || "SHA1" || "SHA256",
-//       LifecycleConfiguration: {
-//         Rules: [
-//           {
-//             ID: `Delete ${filename} in 8 hours`,
-//             Prefix: filename,
-//             Status: 'Enabled',
-//             Expiration: {
-//               Days: 1 / 3, // Approx 8 hours (1/3 of a day)
-//             },
-//           },
-//         ],
-//       },
-//     };
-  
-//     try {
-//       await s3Client.send(new PutBucketLifecycleConfigurationCommand(params));
-//       console.log(`Scheduled deletion for ${filename} in 8 hours.`);
-//     } catch (error) {
-//       console.error(`Error scheduling file deletion: ${error.message}`);
-//       throw error;
-//     }
-//   };
-
 module.exports = { uploadToS3, generateSignedUrl };
