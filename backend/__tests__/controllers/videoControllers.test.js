@@ -1,5 +1,5 @@
 const path = require('path');
-const { addToQueue, setProgress } = require('../../services/queue');
+const { addToQueue } = require('../../services/queue');
 const { convert, convertCloud } = require('../../controllers/videoController'); 
 
 jest.mock('../../services/queue'); // Mock the queue service

@@ -1,5 +1,5 @@
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs').promises;
 const ffmpeg = require('fluent-ffmpeg');
 
 const { processQueue, setProgress, reQueueMessage } = require('../services/queue');
@@ -8,7 +8,6 @@ const { getDropboxFileStream } = require('../services/dropboxService');
 const { convertVideo } = require('../services/videoService');
 const { uploadToS3, generateSignedUrl } = require('../services/aws/awsStorage');
 const{ updateTaskProgress } = require('../services/google/firestore');
-
 
 async function videoConversionHandler(message, io) {
     const { jobId, source, userId, videoId, videoName, dropboxPath, videoExt, videoFormat, videoSettings } = message;
@@ -122,3 +121,5 @@ async function videoConversionHandler(message, io) {
 module.exports = function(io) {
     processQueue((message) => videoConversionHandler(message, io));
 };
+
+module.exports.videoConversionHandler = videoConversionHandler;

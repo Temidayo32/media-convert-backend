@@ -70,3 +70,5 @@ async function handleVideoConversion(message, io) {
 module.exports = function(io) {
     processQueue((message) => handleVideoConversion(message, io));
 };
+
+module.exports.handleVideoConversion = handleVideoConversion;
