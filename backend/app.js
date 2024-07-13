@@ -4,6 +4,7 @@ const cors = require('cors');
 const http = require('http');
 const { Server: SocketServer } = require("socket.io");
 const videoRoutes = require('./routes/videoRoutes');
+const imageRoutes = require('./routes/imageRoutes');
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
 const redisClient = require('./Middleware/redisClient');
@@ -19,7 +20,7 @@ const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
 const io = new SocketServer(server, {
   cors: {
-    origin: '*',
+    origin: 'http://localhost:3000',
   }
 });
 
@@ -30,9 +31,7 @@ app.use((req, res, next) => {
 
 const corsOptions = {
   origin: [
-    'https://localhost:3000',
     'http://localhost:3000',
-    // 'https://9d34-102-215-57-153.ngrok-free.app'
   ],
   credentials: true,
   exposedHeaders : ['set-cookie']
@@ -89,6 +88,8 @@ app.use((req, res, next) => {
 // Start multiple instances of workers
 const numLocalWorkers = 3; 
 const numCloudWorkers = 3; 
+const numImageLocalWorkers = 3; 
+const numImageCloudWorkers = 3; 
 
 for (let i = 0; i < numLocalWorkers; i++) {
     require('./workers/localworker')(io);
@@ -96,6 +97,14 @@ for (let i = 0; i < numLocalWorkers; i++) {
 
 for (let i = 0; i < numCloudWorkers; i++) {
     require('./workers/cloudworker')(io);
+}
+
+for (let i = 0; i < numImageLocalWorkers; i++) {
+  require('./workers/imageLocalWorker')(io);
+}
+
+for (let i = 0; i < numImageCloudWorkers; i++) {
+  require('./workers/imageCloudWorker')(io);
 }
 
 app.set('view engine', 'ejs');
@@ -107,7 +116,8 @@ startCleanupJob();
 cleanupAWS();
 // startStoreCleanup();
 
-app.use('/', videoRoutes);
+app.use('/video', videoRoutes);
+app.use('/image', imageRoutes);
 
 
 

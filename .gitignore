@@ -3,6 +3,7 @@ backend/config
 backend/.env
 backend/session.log
 backend/services/videoMetadata.js
-backend/services/googleStore.js
-backend/services/cloudGarbage.js
+backend/services/deprecated/cloudGarbage.js
+backend/services/image/imageService.js
 backend/__tests__/Middleware/enforceLimitations.t.js
+/build

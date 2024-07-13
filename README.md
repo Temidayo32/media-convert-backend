@@ -32,5 +32,5 @@ Check out [Media Convert (frontend)](https://github.com/Temidayo32/media-convert
 ## Roadmap
 
 - **Video Converter**: Support for converting video files (e.g., MP4, MPEG) .
+- **Image Converter (In Development)**: Support for converting raster and vector image files (e.g., JPG, PNG, SVG).
 - **Document Converter (Coming soon)**: Support for converting document files (e.g., PDF, DOCX).
-- **Image Converter (Coming soon)**: Support for converting image files (e.g., JPG, PNG).

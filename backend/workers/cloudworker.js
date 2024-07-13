@@ -10,23 +10,24 @@ const { uploadToS3, generateSignedUrl } = require('../services/aws/awsStorage');
 const{ updateTaskProgress } = require('../services/google/firestore');
 
 async function videoConversionHandler(message, io) {
-    const { jobId, source, userId, videoId, videoName, dropboxPath, videoExt, videoFormat, videoSettings } = message;
+    const { mimeType, jobId, source, userId, videoId, videoName, dropboxPath, videoExt, videoFormat, videoSettings } = message;
     const tempFilePath = path.join(__dirname, '..', 'uploads', `${videoName}.${videoExt}`);
     const outputPath = path.join(__dirname, '..', 'public', `${videoName}.${videoFormat}`);
 
-    if (source !== 'google' && source !== 'dropbox') {
+    if (source !== 'google' && source !== 'dropbox' && mimeType !=='video') {
         console.log("whoops! wrong worker")
-        await reQueueMessage(message);
+        await reQueueMessage('conversion', message);
         return; // Ignore messages not intended for this worker
     }
 
     try {
         let videoStream;
         const initialData = {
-            jobId,
             name: videoName,
             format: videoFormat,
             progress: 'processing',
+            mimeType: mimeType,
+            jobId,
         };
         if(userId) {
             await updateTaskProgress(initialData, userId);
@@ -119,7 +120,7 @@ async function videoConversionHandler(message, io) {
 
 // Start processing the queue
 module.exports = function(io) {
-    processQueue((message) => videoConversionHandler(message, io));
+    processQueue('conversion', (message) => videoConversionHandler(message, io));
 };
 
 module.exports.videoConversionHandler = videoConversionHandler;

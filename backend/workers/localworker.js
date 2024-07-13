@@ -6,20 +6,21 @@ const { uploadToS3, generateSignedUrl } = require('../services/aws/awsStorage');
 const{ updateTaskProgress } = require('../services/google/firestore');
 
 async function handleVideoConversion(message, io) {
-    const { source, jobId, userId, inputPath, outputPath, videoName, videoFormat, videoSettings } = message;
+    const { mimeType, source, jobId, userId, inputPath, outputPath, videoName, videoFormat, videoSettings } = message;
 
-    if (source !== 'local') {
-        console.log("whoops! wrong worker")
-        await reQueueMessage(message);
+    if (source !== 'local' && mimeType !== 'video') {
+        console.log("whoops! wrong worker");
+        await reQueueMessage('conversion', message);
         return; // Ignore messages not intended for this worker
     }
 
     try {
         const initialData = {
-            jobId,
             name: videoName,
             format: videoFormat,
             progress: 'processing',
+            mimeType: mimeType,
+            jobId,
         };
         if (userId) {
             await updateTaskProgress(initialData, userId);
@@ -68,7 +69,7 @@ async function handleVideoConversion(message, io) {
 
 // Start consuming messages from the queue
 module.exports = function(io) {
-    processQueue((message) => handleVideoConversion(message, io));
+    processQueue('conversion', (message) => handleVideoConversion(message, io));
 };
 
 module.exports.handleVideoConversion = handleVideoConversion;

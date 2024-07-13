@@ -66,7 +66,7 @@ const deleteExpiredFiles = async () => {
 
 // Schedule the function to run every 5 minutes
 const cleanupAWS = () => {
-    cron.schedule('*/5 * * * *', () => {
+    cron.schedule('0 * * * *', () => {
         console.log('Running deleteExpiredFiles task...');
         deleteExpiredFiles();
     });

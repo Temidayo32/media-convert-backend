@@ -7,10 +7,13 @@ async function updateTaskProgress(data, userId) {
     const taskId = data.jobId;
     const taskRef = firestore.collection('tasks').doc(taskId);
 
+    console.log('data:' ,data)
+
     const metadata = {
         name: data.name,
         format: data.format,
         progress: data.progress,
+        mimeType: data.mimeType,
         completedAt: data.progress === 'completed' ? new Date().toISOString() : null,
         userId: userId,
     };
