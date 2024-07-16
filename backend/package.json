@@ -24,6 +24,7 @@
     "connect-session-firebase": "^11.0.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "dompurify": "^3.1.6",
     "dotenv": "^16.4.5",
     "dropbox": "^10.34.0",
     "ejs": "^3.1.10",
@@ -38,13 +39,17 @@
     "http": "^0.0.1-security",
     "ioredis": "^5.4.1",
     "jimp": "^0.22.12",
+    "jsdom": "^24.1.0",
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
     "redis": "^4.6.14",
     "socket.io": "^4.7.5",
     "stream": "^0.0.2",
+    "svgo": "^3.3.2",
     "webpack": "^5.91.0",
-    "winston": "^3.13.0"
+    "winston": "^3.13.0",
+    "xmldom": "^0.6.0",
+    "xpath": "^0.0.34"
   },
   "devDependencies": {
     "jest": "^29.7.0",

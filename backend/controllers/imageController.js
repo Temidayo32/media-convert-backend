@@ -38,7 +38,7 @@ async function imageConvert(req, res) {
 
 async function imageConvertCloud(req, res) {
     console.log("Image conversion request received");
-    const { jobId, userId, imageName, dropboxPath, imageExt, imageId, imageFormat } = req.body; 
+    const { mimeType, source, jobId, userId, imageName, dropboxPath, imageExt, imageId, imageFormat } = req.body; 
     const imageSettings = JSON.parse(req.body.imageSettings); // If there are specific settings for image processing
 
     try {
