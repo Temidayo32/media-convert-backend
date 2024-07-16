@@ -1,0 +1,55 @@
+# Use the official Ubuntu image as the base image
+FROM ubuntu:latest
+
+# Set non-interactive mode for apt-get
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update the package list
+RUN apt-get update
+
+# Install necessary libraries and dependencies
+RUN apt-get install -y \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libgif-dev \
+    hp2xx \
+    wget \
+    build-essential \
+    git \
+    libtool \
+    automake \
+    autoconf \
+    potrace \
+    ghostscript \
+    librsvg2-bin \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install libwebp
+RUN wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.4.0.tar.gz && \
+    tar xvzf libwebp-1.4.0.tar.gz && \
+    cd libwebp-1.4.0 && \
+    ./configure && \
+    make && \
+    make install && \
+    cd .. && \
+    rm -rf libwebp-1.4.0 libwebp-1.4.0.tar.gz
+
+# Clone the ImageMagick repository and checkout the specific version
+RUN git clone --depth 1 --branch 7.1.1-35 https://github.com/ImageMagick/ImageMagick.git ImageMagick-7.1.1 && \
+    cd ImageMagick-7.1.1 && \
+    ./configure --with-modules && \
+    make && \
+    make install && \
+    make check && \
+    cd .. && \
+    rm -rf ImageMagick-7.1.1
+
+# Verify the installation
+RUN magick --version
+
+# Set the working directory
+WORKDIR /workspace
+
+# Command to run when starting the container
+CMD ["bash"]
