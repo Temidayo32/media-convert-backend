@@ -20,6 +20,8 @@ async function videoConversionHandler(message, io) {
         return; // Ignore messages not intended for this worker
     }
 
+    let updatedMessage = { ...message, progress: 'processing' };
+
     try {
         let videoStream;
         const initialData = {
@@ -49,6 +51,7 @@ async function videoConversionHandler(message, io) {
                 console.log('Input format:', metadata.format);
             });
 
+            updatedMessage.progress = 'converting';
             if(userId) {
                 await updateTaskProgress({ ...initialData, progress: 'converting' }, userId);
             } else{
@@ -57,6 +60,7 @@ async function videoConversionHandler(message, io) {
             await convertVideo(tempFilePath, outputPath, videoSettings);
 
             const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
+            updatedMessage.progress = 'uploading';
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'uploading' }, userId);
             } else {
@@ -67,7 +71,7 @@ async function videoConversionHandler(message, io) {
             // Get the public URL
             const publicUrl = await generateSignedUrl(destination);
 
-            
+            updatedMessage.progress = 'completed';
            if(userId) {
             await updateTaskProgress({ ...initialData, progress: 'completed', url: publicUrl }, userId);
            } else{
@@ -77,9 +81,12 @@ async function videoConversionHandler(message, io) {
 
             fs.unlinkSync(tempFilePath);
             fs.unlinkSync(outputPath);
+
+            return updatedMessage;
         } else if (source === 'dropbox') {
             videoStream = await getDropboxFileStream(dropboxPath);
 
+            updatedMessage.progress = 'converting';
             if(userId) {
                 await updateTaskProgress({ ...initialData, progress: 'converting' }, userId);
             } else{
@@ -87,7 +94,7 @@ async function videoConversionHandler(message, io) {
             }
             await convertVideo(videoStream, outputPath, videoSettings)
 
-            
+            updatedMessage.progress = 'uploading';
             const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'uploading' }, userId);
@@ -98,7 +105,7 @@ async function videoConversionHandler(message, io) {
 
             // Get the public URL
             const publicUrl = await generateSignedUrl(destination);
-           
+            updatedMessage.progress = 'completed';
             if(userId) {
                 await updateTaskProgress({ ...initialData, progress: 'completed', url: publicUrl }, userId);
             } else {
@@ -106,21 +113,24 @@ async function videoConversionHandler(message, io) {
             }
             
             fs.unlinkSync(outputPath);
+            return updatedMessage;
         }
 
     } catch (error) {
         console.error('Error converting video from source:', error);
+        updatedMessage.progress = 'failed';
         if(userId) {
             await updateTaskProgress({ jobId, progress: 'failed', name: videoName, format: videoFormat }, userId);
         } else {
             io.emit('conversion_progress', { jobId, progress: 'failed', name: videoName, format: videoFormat });
         }
+        return updatedMessage;
     }
 }
 
 // Start processing the queue
-module.exports = function(io) {
-    processQueue('conversion', (message) => videoConversionHandler(message, io));
+module.exports = async function(io) {
+   await processQueue('conversion', (message) => videoConversionHandler(message, io));
 };
 
 module.exports.videoConversionHandler = videoConversionHandler;

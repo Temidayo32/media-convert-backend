@@ -19,6 +19,8 @@ async function handleImageConversion(message, io) {
         return; // Ignore messages not intended for this worker
     }
 
+    let updatedMessage = { ...message, progress: 'processing' };
+
     try {
          const initialData = {
             name: imageName,
@@ -34,6 +36,7 @@ async function handleImageConversion(message, io) {
         }
 
         // Perform the image conversion
+        updatedMessage.progress = 'converting';
         if (userId) {
             await updateTaskProgress({ ...initialData, progress: 'converting' }, userId);
         } else {
@@ -55,6 +58,7 @@ async function handleImageConversion(message, io) {
         }
 
 
+        updatedMessage.progress = 'uploading';
         // Upload to S3
         const destination = `output/${jobId}.${imageFormat}`; // Structure the path in S3
         if (userId) {
@@ -66,6 +70,7 @@ async function handleImageConversion(message, io) {
 
         // Get the public URL
         const publicUrl = await generateSignedUrl(destination);
+        updatedMessage.progress = 'completed';
 
         if (userId) {
             await updateTaskProgress({ ...initialData, progress: 'completed', url: publicUrl }, userId);
@@ -75,13 +80,17 @@ async function handleImageConversion(message, io) {
 
         fs.unlinkSync(inputPath);
         fs.unlinkSync(outputPath);
+
+        return updatedMessage;
     } catch (error) {
         console.error(`Error processing image conversion for job ${jobId}:`, error);
         if (userId) {
+            updatedMessage.progress = 'failed';
             await updateTaskProgress({ jobId, progress: 'failed', name: imageName, format: imageFormat }, userId);
         } else {
             io.emit('conversion_progress', { jobId, progress: 'failed', name: imageName, format: imageFormat });
         }
+        return updatedMessage;
     }
 }
 

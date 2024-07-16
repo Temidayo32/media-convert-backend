@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { processQueue, setProgress, reQueueMessage } = require('../services/queue');
+const { processQueue, reQueueMessage } = require('../services/queue');
 const { convertVideo } = require('../services/videoService');
 const { uploadToS3, generateSignedUrl } = require('../services/aws/awsStorage');
 const{ updateTaskProgress } = require('../services/google/firestore');
@@ -14,6 +14,8 @@ async function handleVideoConversion(message, io) {
         return; // Ignore messages not intended for this worker
     }
 
+    let updatedMessage = { ...message, progress: 'processing' };
+
     try {
         const initialData = {
             name: videoName,
@@ -22,14 +24,15 @@ async function handleVideoConversion(message, io) {
             mimeType: mimeType,
             jobId,
         };
+
         if (userId) {
             await updateTaskProgress(initialData, userId);
         } else {
             io.emit('conversion_progress', { jobId, progress: 'processing', name: videoName, format: videoFormat });
         }
-        // await setProgress(jobId, 'processing');
 
         // Perform the video conversion
+        updatedMessage.progress = 'converting';
         if (userId) {
             await updateTaskProgress({ ...initialData, progress: 'converting' }, userId);
         } else {
@@ -39,6 +42,7 @@ async function handleVideoConversion(message, io) {
 
         // Upload to GCS
         const destination = `output/${jobId}.${videoFormat}`; // Structure the path in GCS
+        updatedMessage.progress = 'uploading';
         if (userId) {
             await updateTaskProgress({ ...initialData, progress: 'uploading' }, userId);
         } else {
@@ -48,6 +52,7 @@ async function handleVideoConversion(message, io) {
 
         // Get the public URL
         const publicUrl = await generateSignedUrl(destination);
+        updatedMessage.progress = 'completed';
 
         if (userId) {
             await updateTaskProgress({ ...initialData, progress: 'completed', url: publicUrl }, userId);
@@ -57,13 +62,17 @@ async function handleVideoConversion(message, io) {
 
         fs.unlinkSync(inputPath);
         fs.unlinkSync(outputPath);
+
+        return updatedMessage;
     } catch (error) {
         console.error(`Error processing video conversion for job ${jobId}:`, error);
+        updatedMessage.progress = 'failed';
         if(userId) {
             await updateTaskProgress({ jobId, progress: 'failed', name: videoName, format: videoFormat }, userId);
         } else {
             io.emit('conversion_progress', { jobId, progress: 'failed', name: videoName, format: videoFormat });
         }
+        return updatedMessage;
     }
 }
 

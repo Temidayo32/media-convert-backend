@@ -11,18 +11,21 @@ const { uploadToS3, generateSignedUrl } = require('../services/aws/awsStorage');
 const { updateTaskProgress } = require('../services/google/firestore');
 
 const rasterFormats = ['PNG', 'JPG', 'JPEG', 'BMP', 'TIFF'];
-const vectorFormats = ['DXF', 'EMF', 'EPS', 'HPGL', 'PDF', 'PS', 'SVG', 'SVGZ', 'WMF', 'XAML'];
+const vectorFormats = ['DXF', 'EMF', 'EPS', 'PDF', 'PS', 'SVG', 'SVGZ', 'WMF', 'XAML'];
 
 async function imageConversionHandler(message, io) {
     const { mimeType, jobId, source, userId, imageId, imageName, dropboxPath, imageExt, imageFormat, imageSettings } = message;
     const tempFilePath = path.join(__dirname, '..', 'uploads', `${imageName}.${imageExt}`);
     const outputPath = path.join(__dirname, '..', 'public', `${imageName}.${imageFormat}`);
+    console.log(outputPath)
 
     if (source !== 'google' && source !== 'dropbox' && mimeType !== 'image') {
         console.log("whoops! wrong worker");
         await reQueueMessage('image_conversion', message);
         return; // Ignore messages not intended for this worker
     }
+
+    let updatedMessage = { ...message, progress: 'processing' };
 
     try {
         let imageStream;
@@ -43,6 +46,7 @@ async function imageConversionHandler(message, io) {
             imageStream = await getGoogleDriveFileStream(imageId);
             await saveStreamToFile(imageStream, tempFilePath);
 
+            updatedMessage.progress = 'converting';
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'converting' }, userId);
             } else {
@@ -57,13 +61,14 @@ async function imageConversionHandler(message, io) {
             }
 
             const destination = `output/${jobId}.${imageFormat}`; // Structure the path in S3
+            updatedMessage.progress = 'uploading';
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'uploading' }, userId);
             } else {
                 io.emit('conversion_progress', { jobId, progress: 'uploading', name: imageName, format: imageFormat });
             }
             await uploadToS3(outputPath, destination);
-
+            updatedMessage.progress = 'completed';
             // Get the public URL
             const publicUrl = await generateSignedUrl(destination);
 
@@ -75,9 +80,12 @@ async function imageConversionHandler(message, io) {
 
             fs.unlink(tempFilePath);
             fs.unlink(outputPath);
+
+            return updatedMessage;
         } else if (source === 'dropbox') {
             imageStream = await getDropboxFileStream(dropboxPath);
 
+            updatedMessage.progress = 'converting';
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'converting' }, userId);
             } else {
@@ -88,10 +96,11 @@ async function imageConversionHandler(message, io) {
             if (rasterFormats.includes(imageExt.toUpperCase()) && rasterFormats.includes(imageFormat.toUpperCase())) {
                 await convertRasterImage(imageStream, outputPath);
             } else {
-                await convertVectorImageFromUrl(tempFilePath, dropboxPath, outputPath);
+                await convertVectorImageFromUrl(tempFilePath, imageStream, outputPath);
             }
 
             const destination = `output/${jobId}.${imageFormat}`; // Structure the path in S3
+            updatedMessage.progress = 'uploading';
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'uploading' }, userId);
             } else {
@@ -101,7 +110,7 @@ async function imageConversionHandler(message, io) {
 
             // Get the public URL
             const publicUrl = await generateSignedUrl(destination);
-
+            updatedMessage.progress = 'completed';
             if (userId) {
                 await updateTaskProgress({ ...initialData, progress: 'completed', url: publicUrl }, userId);
             } else {
@@ -109,15 +118,19 @@ async function imageConversionHandler(message, io) {
             }
 
             fs.unlink(outputPath);
+
+            return updatedMessage;
         }
 
     } catch (error) {
         console.error('Error converting image from source:', error);
+        updatedMessage.progress = 'failed';
         if (userId) {
             await updateTaskProgress({ jobId, progress: 'failed', name: imageName, format: imageFormat }, userId);
         } else {
             io.emit('conversion_progress', { jobId, progress: 'failed', name: imageName, format: imageFormat });
         }
+        return updatedMessage;
     }
 }
 
