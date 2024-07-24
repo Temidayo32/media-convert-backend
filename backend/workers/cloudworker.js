@@ -1,5 +1,5 @@
 const path = require('path');
-const fs = require('fs').promises;
+const fs = require('fs');
 const ffmpeg = require('fluent-ffmpeg');
 
 const { processQueue, setProgress, reQueueMessage } = require('../services/queue');

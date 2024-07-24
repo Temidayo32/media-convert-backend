@@ -4,9 +4,13 @@ const { promisify } = require('util');
 let limitExceeded = false; 
 
 const enforceLimitations = async (req, res, next) => {
+  const userId = req.headers['user-id']
+  const isAnonymous = req.headers['is-anonymous']
   const idToken = req.headers.authorization ? req.headers.authorization.split(' ')[1] : null;
 
-  if (idToken) {
+
+  const isUserAnonymous = isAnonymous === 'true';
+  if (idToken && !isUserAnonymous) {
     // Skip limitations for signed users
     return next();
   }
@@ -19,8 +23,7 @@ const enforceLimitations = async (req, res, next) => {
   }
 
   try {
-    const sessionID =  req.cookies['connect.sid'] 
-    console.log('session cookies sid:', req.cookies['connect.sid'])
+    const sessionID =  userId; 
 
     const incrAsync = promisify(redisClient.incr).bind(redisClient);
     const conversionCount = await incrAsync(`${sessionID}:conversionCount`);
