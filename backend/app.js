@@ -21,9 +21,57 @@ const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
 const io = new SocketServer(server, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: process.env.NODE_ENV === 'production'
+      ? process.env.BASE_URL
+      : 'http://localhost:3000',
   }
 });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.get('/health', (req, res) => {
+  res.status(200).send('Application is healthy');
+});
+
+const corsMiddleware = async (req, res, next) => {
+  try {
+    // Check if origin is allowed
+    const allowedOrigins = [
+      "https://convertquickly.com",
+      "https://mediaconvert.vercel.app",
+      "http://localhost:3000",
+    ];
+
+    const origin = req.header('Origin');
+    console.log("Received Origin:", origin);
+
+    if (allowedOrigins.includes(origin)) {
+      // Apply the CORS headers dynamically to the response
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Authorization, Is-Anonymous, User-Id, Origin, X-Requested-With, Content-Type, Accept');
+      res.header('Access-Control-Expose-Headers', 'set-cookie');
+      
+      next();  // Proceed to the next middleware if origin is allowed
+    } else {
+      throw new Error(`Not allowed by CORS: ${origin}`);
+    }
+  } catch (error) {
+    // Set CORS headers for the error response
+    res.header('Access-Control-Allow-Origin', req.header('Origin'));
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Headers', 'Authorization, Is-Anonymous, User-Id, Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Expose-Headers', 'set-cookie');
+
+    res.status(403).send(error.message);  // Block the request if not allowed
+  }
+};
+
+// Apply the CORS middleware
+app.use(corsMiddleware);
 
 app.use((req, res, next) => {
   req.io = io;
@@ -31,53 +79,26 @@ app.use((req, res, next) => {
 });
 
 
-const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-  ],
-  credentials: true,
-  exposedHeaders : ['set-cookie']
-};
-
-
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-
-
 // Session middleware with Redis store
 app.use(session({
   store: new RedisStore({ client: redisClient }),
-  secret: 'secret key', //process.env.SESSION_SECRET, 
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    secure: false,
-    // secure: process.env.NODE_ENV === 'production', // Ensure secure cookies in production
+    secure: process.env.NODE_ENV === 'production' ? true : false, // Ensure secure cookies in production
     httpOnly: true,
     sameSite: 'strict',
   }
 }));
-
-app.use((req, res, next) => {
-  const session = req.session;
-  const sessionID  = req.cookies['connect.sid']
-  const cookies = req.cookies;
-  // console.log('Incoming Cookies:', cookies);
-  // console.log('Incoming session:', session);
-  // console.log('Incoming sessionID:', sessionID);
-  next();
-});
 
 
 // Start multiple instances of workers
 const numLocalWorkers = 3; 
 const numCloudWorkers = 3; 
 const numImageLocalWorkers = 3; 
-const numImageCloudWorkers = 3; 
+const numImageCloudWorkers = 3;
 
 for (let i = 0; i < numLocalWorkers; i++) {
     require('./workers/localworker')(io);
@@ -109,7 +130,10 @@ app.use('/video', videoRoutes);
 app.use('/image', imageRoutes);
 app.use('/email', emailRoutes);
 
-
+app.use((err, req, res, next) => {
+  res.status(err.status || 500);
+  res.json({ error: err.message });
+});
 
 server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

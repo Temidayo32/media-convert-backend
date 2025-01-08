@@ -32,8 +32,8 @@ router.get('/', (req, res) => {
 });
 
 // Routes for unsigned users
-router.post('/convert',  enforceLimitations, upload.array('video'), videoController.convert);
-router.post('/convertcloud', enforceLimitations, upload.single('video'), videoController.convertCloud);
+router.post('/convert',  enforceLimitations, videoController.convert);
+router.post('/convertcloud', enforceLimitations, videoController.convertCloud);
 
 // Routes for signed-up users
 router.post('/signed/convert', verifyToken, upload.array('video'), videoController.convert);
