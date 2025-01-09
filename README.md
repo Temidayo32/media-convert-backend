@@ -8,9 +8,6 @@ Check out [Convert Quickly (frontend)](https://github.com/Temidayo32/media-conve
 
 [![Watch the video](https://img.youtube.com/vi/G3hXirKg_7s/maxresdefault.jpg)](https://youtu.be/G3hXirKg_7s)
 
-You're right - let me add those important routing details in the description to match the diagram better.
-
-
 ## Convert Quickly Backend System Architecture
 
 ```mermaid
